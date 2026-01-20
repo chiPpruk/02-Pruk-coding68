@@ -1,1 +1,8 @@
+Start_time = float(input("เวลาเริ่มต้น : "))                      02 Pruk
+End_time = float(input("เวลาเริ่มสิ้นสุด : "))
 
+Current_time = datetime.now()
+print(Current_time)
+
+if Current_time >= End_time:
+  print("ท่านใช้งานครบเวลาแล้ว")
