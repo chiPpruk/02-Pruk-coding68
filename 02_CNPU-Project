@@ -1,8 +1,148 @@
-Start_time = float(input("เวลาเริ่มต้น : "))                      02 Pruk
-End_time = float(input("เวลาเริ่มสิ้นสุด : "))
+import time
+import threading
+from datetime import datetime, timedelta
+import tkinter as tk
+from tkinter import messagebox
+from win10toast import ToastNotifier
 
-Current_time = datetime.now()
-print(Current_time)
+toast = ToastNotifier()
+timer_running = False
 
-if Current_time >= End_time:
-  print("ท่านใช้งานครบเวลาแล้ว")
+# ---------- Logic ----------
+def start_timer():
+    global timer_running
+    try:
+        minutes = int(entry_minutes.get())
+        seconds = int(entry_seconds.get())
+    except ValueError:
+        messagebox.showerror("Error", "กรุณาใส่ตัวเลขเท่านั้น")
+        return
+
+    total_seconds = minutes * 60 + seconds
+
+    if total_seconds <= 0:
+        messagebox.showerror(
+            "Error",
+            "ต้องกำหนดเวลาอย่างน้อย 1 วินาที\n(ถ้าไม่ใช้หน่วยใด ให้ใส่ 0)"
+        )
+        return
+
+    timer_running = True
+    end_time = datetime.now() + timedelta(seconds=total_seconds)
+    label_status.config(text="กำลังทำงาน...", fg="#555555")
+
+    def countdown():
+        global timer_running
+        while timer_running:
+            remaining = int((end_time - datetime.now()).total_seconds())
+
+            if remaining <= 0:
+                toast.show_toast(
+                    "แจ้งเตือน",
+                    "⛔ ครบเวลาการใช้งานคอมพิวเตอร์แล้ว",
+                    duration=10,
+                    threaded=True
+                )
+                label_timer.config(text="00:00")
+                label_status.config(text="ครบเวลาการใช้งาน", fg="#000000")
+                timer_running = False
+                break
+
+            mins = remaining // 60
+            secs = remaining % 60
+            label_timer.config(text=f"{mins:02d}:{secs:02d}")
+            time.sleep(1)
+
+    threading.Thread(target=countdown, daemon=True).start()
+
+def reset_timer():
+    global timer_running
+    timer_running = False
+    label_timer.config(text="--:--")
+    label_status.config(text="พร้อมใช้งาน", fg="#888888")
+
+# ---------- GUI ----------
+root = tk.Tk()
+root.title("โปรแกรมกำหนดเวลาการใช้งานคอมพิวเตอร์")
+root.geometry("320x220")
+root.resizable(False, False)
+
+# Colors
+BG = "#FAFAFA"
+FG = "#222222"
+SUB = "#888888"
+BTN = "#E0E0E0"
+BTN_HOVER = "#D6D6D6"
+
+root.configure(bg=BG)
+
+# Title
+tk.Label(
+    root,
+    text="โปรแกรมกำหนดเวลาการใช้งานคอมพิวเตอร์",
+    font=("Segoe UI", 14, "bold"),
+    bg=BG,
+    fg=FG,
+    wraplength=300,
+    justify="center"
+).pack(pady=(15, 5))
+
+# Input Frame
+frame = tk.Frame(root, bg=BG)
+frame.pack(pady=5)
+
+entry_minutes = tk.Entry(
+    frame, width=4, justify="center",
+    font=("Segoe UI", 10),
+    bd=0, bg="#FFFFFF"
+)
+entry_minutes.insert(0, "0")
+entry_minutes.grid(row=0, column=0, padx=5)
+
+tk.Label(frame, text=":", bg=BG, fg=FG).grid(row=0, column=1)
+
+entry_seconds = tk.Entry(
+    frame, width=4, justify="center",
+    font=("Segoe UI", 10),
+    bd=0, bg="#FFFFFF"
+)
+entry_seconds.insert(0, "0")
+entry_seconds.grid(row=0, column=2, padx=5)
+
+# Buttons
+tk.Button(
+    root, text="เริ่ม",
+    width=12, bd=0,
+    bg=BTN, fg=FG,
+    activebackground=BTN_HOVER,
+    command=start_timer
+).pack(pady=(10, 4))
+
+tk.Button(
+    root, text="ตั้งเวลาใหม่",
+    width=12, bd=0,
+    bg=BTN, fg=FG,
+    activebackground=BTN_HOVER,
+    command=reset_timer
+).pack()
+
+# Timer Display
+label_timer = tk.Label(
+    root,
+    text="--:--",
+    font=("Segoe UI", 18),
+    bg=BG,
+    fg=FG
+)
+label_timer.pack(pady=(10, 0))
+
+label_status = tk.Label(
+    root,
+    text="พร้อมใช้งาน",
+    font=("Segoe UI", 9),
+    bg=BG,
+    fg=SUB
+)
+label_status.pack()
+
+root.mainloop()
