@@ -18,7 +18,8 @@
 * **Design Tool:** (เช่น Figma, Canva)
 
 ## 📸 4. ตัวอย่างการใช้งาน (Screenshots)
-![Uploading 02_CNPU.png…]()
+<img width="1066" height="656" alt="02_CNPU" src="https://github.com/user-attachments/assets/7af53f59-1f35-4546-8800-cea0630450e7" />
+
 
 
 ## 💻 5. วิธีการใช้งาน (How to run)
