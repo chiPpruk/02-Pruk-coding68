@@ -1,0 +1,199 @@
+
+import tkinter as tk
+from tkinter import messagebox
+from datetime import datetime, timedelta
+
+# --------- Earth Tone Colors ---------
+BG_MAIN = "#F4EFEA"      # ครีมอ่อน
+BG_CARD = "#E8DFD6"      # ครีมเข้ม
+PRIMARY = "#6B4F3A"      # น้ำตาลเข้ม
+ACCENT = "#A67B5B"       # น้ำตาลอ่อน
+TEXT_DARK = "#3E2F23"    # น้ำตาลตัวอักษร
+SUB_TEXT = "#7A6A5A"     # น้ำตาลหม่น
+
+# ------------------ POPUP ------------------ #
+def show_corner_popup(root, message="ครบเวลาการใช้งานแล้ว", duration=4000):
+    popup = tk.Toplevel(root)
+    popup.overrideredirect(True)
+    popup.attributes("-topmost", True)
+    popup.attributes("-alpha", 0.0)
+
+    width = 320
+    height = 100
+
+    screen_width = root.winfo_screenwidth()
+    screen_height = root.winfo_screenheight()
+
+    start_y = screen_height
+    final_y = screen_height - height - 40
+    x = screen_width - width - 20
+
+    popup.geometry(f"{width}x{height}+{x}+{start_y}")
+    popup.configure(bg=BG_CARD)
+
+    tk.Label(
+        popup,
+        text="แจ้งเตือน",
+        font=("Segoe UI", 12, "bold"),
+        bg=BG_CARD,
+        fg=TEXT_DARK
+    ).pack(pady=(12, 0))
+
+    tk.Label(
+        popup,
+        text=message,
+        font=("Segoe UI", 10),
+        bg=BG_CARD,
+        fg=PRIMARY,
+        wraplength=280
+    ).pack(pady=6)
+
+    def animate_in(y=start_y, alpha=0.0):
+        if y > final_y:
+            y -= 8
+            alpha += 0.06
+            popup.geometry(f"{width}x{height}+{x}+{int(y)}")
+            popup.attributes("-alpha", min(alpha, 1.0))
+            root.after(15, animate_in, y, alpha)
+        else:
+            root.after(duration, animate_out)
+
+    def animate_out(alpha=1.0):
+        if alpha > 0:
+            alpha -= 0.05
+            popup.attributes("-alpha", alpha)
+            root.after(20, animate_out, alpha)
+        else:
+            popup.destroy()
+
+    animate_in()
+
+# ------------------ APP ------------------ #
+class TimerApp:
+    def __init__(self, root):
+        self.root = root
+        self.timer_running = False
+        self.end_time = None
+        self.setup_ui()
+
+    def setup_ui(self):
+        self.root.title("โปรแกรมกำหนดเวลาการใช้งานคอมพิวเตอร์")
+        self.root.geometry("360x260")
+        self.root.resizable(False, False)
+        self.root.configure(bg=BG_MAIN)
+
+        tk.Label(
+            self.root,
+            text="โปรแกรมกำหนดเวลาการใช้งานคอมพิวเตอร์",
+            font=("Segoe UI", 13, "bold"),
+            bg=BG_MAIN,
+            fg=TEXT_DARK
+        ).pack(pady=(15, 10))
+
+        frame = tk.Frame(self.root, bg=BG_MAIN)
+        frame.pack(pady=5)
+
+        # นาที
+        self.entry_minutes = tk.Entry(frame, width=4, justify="center", bg=BG_CARD, fg=TEXT_DARK)
+        self.entry_minutes.insert(0, "0")
+        self.entry_minutes.grid(row=0, column=0, padx=(5,2))
+
+        tk.Label(frame, text="นาที", bg=BG_MAIN, fg=SUB_TEXT).grid(row=0, column=1, padx=(0,10))
+
+        # วินาที
+        self.entry_seconds = tk.Entry(frame, width=4, justify="center", bg=BG_CARD, fg=TEXT_DARK)
+        self.entry_seconds.insert(0, "0")
+        self.entry_seconds.grid(row=0, column=2, padx=(5,2))
+
+        tk.Label(frame, text="วินาที", bg=BG_MAIN, fg=SUB_TEXT).grid(row=0, column=3)
+
+        # Buttons
+        start_btn = tk.Button(
+            self.root,
+            text="เริ่ม",
+            width=18,
+            bg=PRIMARY,
+            fg="white",
+            activebackground=ACCENT,
+            bd=0,
+            command=self.start_timer
+        )
+        start_btn.pack(pady=10)
+
+        reset_btn = tk.Button(
+            self.root,
+            text="ตั้งเวลาใหม่",
+            width=18,
+            bg=ACCENT,
+            fg="white",
+            activebackground=PRIMARY,
+            bd=0,
+            command=self.reset_timer
+        )
+        reset_btn.pack()
+
+        self.label_timer = tk.Label(
+            self.root,
+            text="--:--",
+            font=("Segoe UI", 20, "bold"),
+            bg=BG_MAIN,
+            fg=PRIMARY
+        )
+        self.label_timer.pack(pady=12)
+
+        self.label_status = tk.Label(
+            self.root,
+            text="พร้อมใช้งาน",
+            font=("Segoe UI", 9),
+            fg=SUB_TEXT,
+            bg=BG_MAIN
+        )
+        self.label_status.pack()
+
+    def start_timer(self):
+        try:
+            minutes = int(self.entry_minutes.get())
+            seconds = int(self.entry_seconds.get())
+        except ValueError:
+            messagebox.showerror("Error", "กรุณาใส่ตัวเลขเท่านั้น")
+            return
+
+        total_seconds = minutes * 60 + seconds
+
+        if total_seconds <= 0:
+            messagebox.showerror("Error", "ต้องตั้งเวลาอย่างน้อย 1 วินาที")
+            return
+
+        self.timer_running = True
+        self.end_time = datetime.now() + timedelta(seconds=total_seconds)
+        self.label_status.config(text="กำลังทำงาน...", fg=PRIMARY)
+        self.update_timer()
+
+    def update_timer(self):
+        if not self.timer_running:
+            return
+
+        remaining = int((self.end_time - datetime.now()).total_seconds())
+
+        if remaining <= 0:
+            self.label_timer.config(text="00:00")
+            self.label_status.config(text="ครบเวลาการใช้งาน", fg=TEXT_DARK)
+            show_corner_popup(self.root, "⛔ ครบเวลาการใช้งานคอมพิวเตอร์แล้ว")
+            self.timer_running = False
+            return
+
+        mins = remaining // 60
+        secs = remaining % 60
+        self.label_timer.config(text=f"{mins:02d}:{secs:02d}")
+        self.root.after(1000, self.update_timer)
+
+    def reset_timer(self):
+        self.timer_running = False
+        self.label_timer.config(text="--:--")
+        self.label_status.config(text="พร้อมใช้งาน", fg=SUB_TEXT)
+
+# ------------------ RUN ------------------ #
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = TimerApp(root)
+    root.mainloop()
